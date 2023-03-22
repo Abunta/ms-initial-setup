@@ -7,7 +7,8 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: standard
+  storageClassName: fast-storageclass
+  volumeMode: Filesystem
   accessModes:
     - ReadWriteOnce
 
@@ -33,14 +34,17 @@ spec:
         image: mysql:8.0
         env:
         - name: MYSQL_ROOT_PASSWORD
-          value: root
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: password
+        - name: MYSQL_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: admin-password
         - name: MYSQL_ROOT_HOST
-          value: "%"
-        # - name: MYSQL_HOST
-        #   valueFrom:
-        #     configMapKeyRef:
-        #       key: hostname
-        #       name: mysql-cm
+          value: '%'
         ports:
         - containerPort: 3306
           name: mysql
@@ -82,3 +86,24 @@ spec:
   ports:
   - port: 3306
 
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+type: Opaque
+data:
+  password: UGFzc3dvcmQkMTIzNDU2 # Password$123456
+  admin-password: UGFzc3dvcmQkMTIzNDU2 # Password$123456
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-storageclass
+provisioner: pd.csi.storage.gke.io
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+parameters:
+  type: pd-balanced
