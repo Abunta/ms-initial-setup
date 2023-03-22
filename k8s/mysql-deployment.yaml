@@ -33,7 +33,7 @@ spec:
         image: mysql:8.0
         env:
         - name: MYSQL_ROOT_PASSWORD
-          value: root        
+          value: root
         - name: MYSQL_HOST
           valueFrom:
             configMapKeyRef:
